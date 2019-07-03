@@ -5,6 +5,7 @@
 #include "FWCore/Utilities/interface/Exception.h"
 
 #include "DataFormats/Math/interface/deltaR.h"
+#include "DataFormats/Math/interface/deltaPhi.h"
 
 namespace {
     template <typename T1, typename T2>
@@ -61,14 +62,50 @@ void PFAlgo3::runPF(Region &r) const {
 
     /// ------------- first step (can all go in parallel) ----------------
 
-    if (debug_) {
+    if (debug_ || true) {
         printf("PFAlgo3\nPFAlgo3 region Eta [ %+5.2f , %+5.2f ],  Phi [ %+5.2f , %+5.2f ] \n", r.etaMin, r.etaMax, r.phiCenter-r.phiHalfWidth, r.phiCenter+r.phiHalfWidth );
         printf("PFAlgo3 \t N(track) %3lu   N(em) %3lu   N(calo) %3lu   N(mu) %3lu\n", r.track.size(), r.emcalo.size(), r.calo.size(), r.muon.size());
         for (int itk = 0, ntk = r.track.size(); itk < ntk; ++itk) {
             const auto & tk = r.track[itk]; 
-            printf("PFAlgo3 \t track %3d: pt %7.2f +- %5.2f  vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f calo ptErr %7.2f stubs %2d chi2 %7.1f\n", 
+            printf("PFAlgo3 \t track %3d: pt %7.2f +- %5.2f  vtx eta %+5.5f  vtx phi %+5.5f  calo eta %+5.5f  calo phi %+5.5f calo ptErr %7.2f stubs %2d chi2 %7.1f\n", 
                                 itk, tk.floatPt(), tk.floatPtErr(), tk.floatVtxEta(), tk.floatVtxPhi(), tk.floatEta(), tk.floatPhi(), tk.floatCaloPtErr(), int(tk.hwStubs), tk.hwChi2*0.1f);
+            
+            for(unsigned int nitk = itk+1;  nitk < r.track.size(); ++nitk)
+            {
+                float eta1  = r.track[itk].floatVtxEta();
+                float eta2  = r.track[nitk].floatVtxEta();
+
+                float bend1 = r.track[itk].src->track()->getStubPtConsistency();
+                float bend2 = r.track[nitk].src->track()->getStubPtConsistency();
+
+                float phi1 = r.track[itk].floatVtxPhi();
+                float phi2 = r.track[nitk].floatVtxPhi();
+
+                float dphi = deltaPhi(phi1, phi2);
+                dphi = dphi>0 ? dphi:-dphi;
+                float deta = eta1-eta2>0 ? eta1-eta2: eta2-eta1;
+                const auto & ntk = r.track[nitk];
+                
+                if(r.track[itk].floatVtxEta() != tk.floatVtxEta()) std::cout << "\n\n\n#########################PROBLEM##################\n\n\n " << std::endl;
+                if(r.track[nitk].floatVtxEta() != ntk.floatVtxEta()) std::cout << "\n\n\n#########################PROBLEM##################\n\n\n " << std::endl;
+//                std::cout <<  tk.src->track()->getStubPtConsistency() << std::endl;
+                if(deta<0.005 && dphi<0.005)
+                {
+                      
+                    printf("---------deta = %+5.5f --- dphi = %+5.5f-----------------\n", deta, dphi);
+                //    std::cout << "eta1-eta2:" << eta1 << "-" << eta2 << "   " <<"phi1-phi2: " << phi1 << "-" << phi2<<std::endl;
+                    printf("track %3d: pt %7.2f +- %5.2f  vtx eta %+5.5f  vtx phi %+5.5f   stubs %2d chi2 %7.1f chi2/stubs %7.2f bend %5.5f\n", 
+                                itk, tk.floatPt(), tk.floatPtErr(), tk.floatVtxEta(), tk.floatVtxPhi(), int(tk.hwStubs), tk.hwChi2*0.1f, float(tk.hwChi2*0.1f)/float(2*tk.hwStubs-4),tk.src->track()->getStubPtConsistency());
+                    printf("track %3d: pt %7.2f +- %5.2f  vtx eta %+5.5f  vtx phi %+5.5f  stubs %2d chi2 %7.1f chi2/stubs %7.2f bend %5.5f\n", 
+                                nitk, ntk.floatPt(), ntk.floatPtErr(), ntk.floatVtxEta(), ntk.floatVtxPhi(), int(ntk.hwStubs), ntk.hwChi2*0.1f, float(ntk.hwChi2*0.1f)/float(2*ntk.hwStubs-4), ntk.src->track()->getStubPtConsistency());
+                    printf("------------------------------\n");
+                }
+
+            }
+          //0.0019000000
+          //0.00095000000 
         }
+/*
         for (int iem = 0, nem = r.emcalo.size(); iem < nem; ++iem) {
             const auto & em = r.emcalo[iem];
             printf("PFAlgo3 \t EM    %3d: pt %7.2f +- %5.2f  vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f calo ptErr %7.2f\n", 
@@ -84,6 +121,7 @@ void PFAlgo3::runPF(Region &r) const {
             printf("PFAlgo3 \t muon  %3d: pt %7.2f           vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f \n", 
                                 im, mu.floatPt(), mu.floatEta(), mu.floatPhi(), mu.floatEta(), mu.floatPhi());
         }
+*/
 
     }
 
