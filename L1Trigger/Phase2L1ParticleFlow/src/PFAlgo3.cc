@@ -63,20 +63,22 @@ void PFAlgo3::runPF(Region &r) const {
     /// ------------- first step (can all go in parallel) ----------------
 
     if (debug_ || true) {
-        printf("PFAlgo3\nPFAlgo3 region Eta [ %+5.2f , %+5.2f ],  Phi [ %+5.2f , %+5.2f ] \n", r.etaMin, r.etaMax, r.phiCenter-r.phiHalfWidth, r.phiCenter+r.phiHalfWidth );
-        printf("PFAlgo3 \t N(track) %3lu   N(em) %3lu   N(calo) %3lu   N(mu) %3lu\n", r.track.size(), r.emcalo.size(), r.calo.size(), r.muon.size());
+//        printf("PFAlgo3\nPFAlgo3 region Eta [ %+5.2f , %+5.2f ],  Phi [ %+5.2f , %+5.2f ] \n", r.etaMin, r.etaMax, r.phiCenter-r.phiHalfWidth, r.phiCenter+r.phiHalfWidth );
+//        printf("PFAlgo3 \t N(track) %3lu   N(em) %3lu   N(calo) %3lu   N(mu) %3lu\n", r.track.size(), r.emcalo.size(), r.calo.size(), r.muon.size());
         for (int itk = 0, ntk = r.track.size(); itk < ntk; ++itk) {
             const auto & tk = r.track[itk]; 
-            printf("PFAlgo3 \t track %3d: pt %7.2f +- %5.2f  vtx eta %+5.5f  vtx phi %+5.5f  calo eta %+5.5f  calo phi %+5.5f calo ptErr %7.2f stubs %2d chi2 %7.1f\n", 
-                                itk, tk.floatPt(), tk.floatPtErr(), tk.floatVtxEta(), tk.floatVtxPhi(), tk.floatEta(), tk.floatPhi(), tk.floatCaloPtErr(), int(tk.hwStubs), tk.hwChi2*0.1f);
+//            printf("PFAlgo3 \t track %3d: pt %7.2f +- %5.2f  vtx eta %+5.5f  vtx phi %+5.5f  calo eta %+5.5f  calo phi %+5.5f calo ptErr %7.2f stubs %2d chi2 %7.1f\n", 
+//                                itk, tk.floatPt(), tk.floatPtErr(), tk.floatVtxEta(), tk.floatVtxPhi(), tk.floatEta(), tk.floatPhi(), tk.floatCaloPtErr(), int(tk.hwStubs), tk.hwChi2*0.1f);
             
+//            r.track[itk].setFloatPt(0);
+
             for(unsigned int nitk = itk+1;  nitk < r.track.size(); ++nitk)
             {
                 float eta1  = r.track[itk].floatVtxEta();
                 float eta2  = r.track[nitk].floatVtxEta();
 
-                float bend1 = r.track[itk].src->track()->getStubPtConsistency();
-                float bend2 = r.track[nitk].src->track()->getStubPtConsistency();
+//                float bend1 = r.track[itk].src->track()->getStubPtConsistency();
+//                float bend2 = r.track[nitk].src->track()->getStubPtConsistency();
 
                 float phi1 = r.track[itk].floatVtxPhi();
                 float phi2 = r.track[nitk].floatVtxPhi();
@@ -86,12 +88,13 @@ void PFAlgo3::runPF(Region &r) const {
                 float deta = eta1-eta2>0 ? eta1-eta2: eta2-eta1;
                 const auto & ntk = r.track[nitk];
                 
-                if(r.track[itk].floatVtxEta() != tk.floatVtxEta()) std::cout << "\n\n\n#########################PROBLEM##################\n\n\n " << std::endl;
-                if(r.track[nitk].floatVtxEta() != ntk.floatVtxEta()) std::cout << "\n\n\n#########################PROBLEM##################\n\n\n " << std::endl;
+//                if(r.track[itk].floatVtxEta() != tk.floatVtxEta()) std::cout << "\n\n\n#########################PROBLEM##################\n\n\n " << std::endl;
+//                if(r.track[nitk].floatVtxEta() != ntk.floatVtxEta()) std::cout << "\n\n\n#########################PROBLEM##################\n\n\n " << std::endl;
 //                std::cout <<  tk.src->track()->getStubPtConsistency() << std::endl;
                 if(deta<0.005 && dphi<0.005)
                 {
-                      
+  r.track[itk].setFloatPt(0);
+  r.track[nitk].setFloatPt(0);
                     printf("---------deta = %+5.5f --- dphi = %+5.5f-----------------\n", deta, dphi);
                 //    std::cout << "eta1-eta2:" << eta1 << "-" << eta2 << "   " <<"phi1-phi2: " << phi1 << "-" << phi2<<std::endl;
                     printf("track %3d: pt %7.2f +- %5.2f  vtx eta %+5.5f  vtx phi %+5.5f   stubs %2d chi2 %7.1f chi2/stubs %7.2f bend %5.5f\n", 
@@ -99,6 +102,7 @@ void PFAlgo3::runPF(Region &r) const {
                     printf("track %3d: pt %7.2f +- %5.2f  vtx eta %+5.5f  vtx phi %+5.5f  stubs %2d chi2 %7.1f chi2/stubs %7.2f bend %5.5f\n", 
                                 nitk, ntk.floatPt(), ntk.floatPtErr(), ntk.floatVtxEta(), ntk.floatVtxPhi(), int(ntk.hwStubs), ntk.hwChi2*0.1f, float(ntk.hwChi2*0.1f)/float(2*ntk.hwStubs-4), ntk.src->track()->getStubPtConsistency());
                     printf("------------------------------\n");
+
                 }
 
             }

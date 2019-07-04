@@ -130,6 +130,7 @@ namespace l1tpf_impl {
           used = false;
       }
 
+      void  setFloatPt(float pt) {CaloCluster::ptToInt16(pt);}
       float floatPt() const { return float(hwPt) / CaloCluster::PT_SCALE; }
       float floatPtErr() const { return float(hwPtErr) / CaloCluster::PT_SCALE; }
       float floatCaloPtErr() const { return float(hwCaloPtErr) / CaloCluster::PT_SCALE; }
