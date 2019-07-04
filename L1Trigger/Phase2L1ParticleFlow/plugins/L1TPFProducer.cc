@@ -145,10 +145,26 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
         const auto & tracks = *htracks;
         for (unsigned int itk = 0, ntk = tracks.size(); itk < ntk; ++itk) {
             const auto & tk = tracks[itk];
+            bool addTrackToRegion = true;
+            for (unsigned int intk = 0, nntk = tracks.size(); intk < nntk; ++intk) { 
+                if(itk == intk) continue;
+                float eta1  = tracks[itk].eta();
+                float eta2  = tracks[intk].eta();
+                float phi1 = tracks[itk].phi();
+                float phi2 = tracks[intk].phi();
+                float dphi = std::fabs(deltaPhi(phi1, phi2));
+                float deta = std::fabs(eta1-eta2);
+                if(deta<0.005 && dphi<0.005) {
+               //     printf("<------deta %2.5f  dphi %2.5f and non-fabs (%2.5f  %2.5f) ------> \n", deta, dphi, eta1-eta2, deltaPhi(phi1, phi2));
+               //     printf("discarding pftrack %d with pt %3.1f  eta %2.5f phi %2.5f \n ",itk, tk.pt(), tk.eta(), tk.phi());
+               //     printf("----------------------------------- \n");
+                    addTrackToRegion = false;
+                } 
+            }
             // adding objects to PF
             if (debugR_ > 0 && deltaR(tk.eta(),tk.phi(),debugEta_,debugPhi_) > debugR_) continue;
-            if (tk.pt() > trkPt_ && tk.nStubs() >= trkMinStubs_ && tk.normalizedChi2() < trkMaxChi2_) {
-                l1regions_.addTrack(tk, l1t::PFTrackRef(htracks,itk)); 
+            if (tk.pt() > trkPt_ && tk.nStubs() >= trkMinStubs_ && tk.normalizedChi2() < trkMaxChi2_ && addTrackToRegion) {
+            l1regions_.addTrack(tk, l1t::PFTrackRef(htracks,itk)); 
             }
         }
     }
