@@ -39,6 +39,7 @@ class L1TPFProducer : public edm::stream::EDProducer<> {
         bool hasTracks_;
         edm::EDGetTokenT<l1t::PFTrackCollection> tkCands_;
         float trkPt_, trkMaxChi2_;
+        unsigned killDuplicateTracks_;
         unsigned trkMinStubs_;
         l1tpf_impl::PUAlgoBase::VertexAlgo vtxAlgo_;  
         edm::EDGetTokenT<std::vector<l1t::Vertex>> extVtx_;
@@ -73,6 +74,7 @@ L1TPFProducer::L1TPFProducer(const edm::ParameterSet& iConfig):
     tkCands_(hasTracks_ ? consumes<l1t::PFTrackCollection>(iConfig.getParameter<edm::InputTag>("tracks")) : edm::EDGetTokenT<l1t::PFTrackCollection>()),
     trkPt_(iConfig.getParameter<double>("trkPtCut")),
     trkMaxChi2_(iConfig.getParameter<double>("trkMaxChi2")),
+    killDuplicateTracks_(iConfig.getParameter<unsigned>("killDuplicateTracks")),
     trkMinStubs_(iConfig.getParameter<unsigned>("trkMinStubs")),
     muCands_(consumes<l1t::MuonBxCollection>(iConfig.getParameter<edm::InputTag>("muons"))),
     tkMuCands_(consumes<l1t::L1TkMuonParticleCollection>(iConfig.getParameter<edm::InputTag>("tkMuons"))),
@@ -146,19 +148,33 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
         for (unsigned int itk = 0, ntk = tracks.size(); itk < ntk; ++itk) {
             const auto & tk = tracks[itk];
             bool addTrackToRegion = true;
+            if(killDuplicateTracks_>0)
             for (unsigned int intk = 0, nntk = tracks.size(); intk < nntk; ++intk) { 
                 if(itk == intk) continue;
                 float eta1  = tracks[itk].eta();
                 float eta2  = tracks[intk].eta();
-                float phi1 = tracks[itk].phi();
-                float phi2 = tracks[intk].phi();
+                float phi1  = tracks[itk].phi();
+                float phi2  = tracks[intk].phi();
+                float bend1 = tracks[itk].track()->getStubPtConsistency();
+                float bend2 = tracks[intk].track()->getStubPtConsistency();
                 float dphi = std::fabs(deltaPhi(phi1, phi2));
                 float deta = std::fabs(eta1-eta2);
                 if(deta<0.005 && dphi<0.005) {
-               //     printf("<------deta %2.5f  dphi %2.5f and non-fabs (%2.5f  %2.5f) ------> \n", deta, dphi, eta1-eta2, deltaPhi(phi1, phi2));
-               //     printf("discarding pftrack %d with pt %3.1f  eta %2.5f phi %2.5f \n ",itk, tk.pt(), tk.eta(), tk.phi());
-               //     printf("----------------------------------- \n");
-                    addTrackToRegion = false;
+                    if(killDuplicateTracks_==1)addTrackToRegion = false;
+                    if(killDuplicateTracks_==2 && bend1>bend2) {addTrackToRegion = false;} // keep mathcing track
+                    if(debug_ && killDuplicateTracks_==1 && !addTrackToRegion) {
+                    printf("<------deta %2.5f  dphi %2.5f and non-fabs (%2.5f  %2.5f) ------> \n", deta, dphi, eta1-eta2, deltaPhi(phi1, phi2));
+                    printf("discarding pftrack %d with pt %3.1f  eta %2.5f phi %2.5f bend %2.5f \n",itk, tk.pt(), tk.eta(), tk.phi(), tk.track()->getStubPtConsistency());
+                    printf("----------------------------------- \n");
+                    }
+                    if(debug_ && killDuplicateTracks_==2 && !addTrackToRegion) {
+                    const auto & mtk = tracks[intk]; //matched track
+                    printf("<------deta %2.5f  dphi %2.5f and non-fabs (%2.5f  %2.5f) ------> \n", deta, dphi, eta1-eta2, deltaPhi(phi1, phi2));
+                    printf("discarding  pftrack %d with pt %3.1f  eta %2.5f phi %2.5f bend1 %2.5f \n",itk, tk.pt(), tk.eta(), tk.phi(), tk.track()->getStubPtConsistency());
+                    printf("in favor of pftrack %d with pt %3.1f  eta %2.5f phi %2.5f bend1 %2.5f \n",intk, mtk.pt(), mtk.eta(), mtk.phi(), mtk.track()->getStubPtConsistency());
+                    printf("----------------------------------- \n");
+                    }
+
                 } 
             }
             // adding objects to PF

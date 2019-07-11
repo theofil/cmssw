@@ -16,6 +16,8 @@ l1pfProducer = cms.EDProducer("L1TPFProducer",
      trkPtCut    = cms.double(2.0),
      trkMinStubs = cms.uint32(4),
      trkMaxChi2  = cms.double(15),
+     # killDuplicateTracks [0 = don't kill duplicate tracks, 1 = kill all duplicates, 2 = kill only the high bending]
+     killDuplicateTracks = cms.uint32(0),
      etaCharged  = cms.double(2.5),
      puppiDr     = cms.double(0.3),
      puppiDrMin  = cms.double(0.1),
@@ -65,7 +67,7 @@ l1pfProducer = cms.EDProducer("L1TPFProducer",
         # other features not turned on: matching too high pt tracks to calo but rescaling track pt (not implemented in PFAlgo3)
         rescaleUnmatchedTrack = cms.bool(False),
      ),
-     debug = cms.untracked.int32(0),
+     debug = cms.untracked.int32(0)
 )
 
 
